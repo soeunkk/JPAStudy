@@ -5,19 +5,21 @@ import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-/* @Entity: JPA 에게 테이블임을 알림 */
 @Entity
-/* @Table(name): 매핑할 DB 테이블을 지정 */
-//@Table(name="USER")
 public class Member {
-    /* @Id: PK 지정 */
     @Id
     private Long id;
-    /* @Column(name): 매핑할 DB 컬럼을 지정 */
-    //@Column(name="username")
     private String name;
 
-    //Getter, Setter 단축키: Alt + Insert
+    public Member() {   //JPA 에서는 내부에서 동적으로 객체를 생성하기 때문에 기본 생성자가 필요함
+
+    }
+
+    public Member(Long id, String name) {
+        this.id = id;
+        this.name = name;
+    }
+
     public Long getId() {
         return id;
     }

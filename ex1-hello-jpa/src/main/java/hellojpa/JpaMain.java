@@ -4,50 +4,62 @@ import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.EntityTransaction;
 import javax.persistence.Persistence;
-import java.util.List;
 
 public class JpaMain {
     public static void main(String[] args) {
-        //createEntityManagerFactory() 파라미터로 persistence.xml 에서 작성한 유닛 이름을 넣어주어야 함
-        //따라서 사용하는 데이터베이스가 여러 개라면 유닛도 여러 개이므로 emf 도 여러 개 만들어야 함
+
         EntityManagerFactory emf = Persistence.createEntityManagerFactory("hello");
 
-        EntityManager em = emf.createEntityManager();   //데이터베이스에 쿼리를 날릴 때마다 하나의 EntityManager 를 만들어야 함 (쓰레드간 공유 XXX)
+        EntityManager em = emf.createEntityManager();
 
-        EntityTransaction transaction1 = em.getTransaction();  //JPA 에서 데이터베이스를 변경하는 모든 작업은 꼭 트랜잭션 안에서 작업 해야 함
-        transaction1.begin();    //트랜잭션 시작
+        EntityTransaction transaction1 = em.getTransaction();
+        transaction1.begin();
 
         try {
+            //비영속
             Member member = new Member();
-            member.setId(2L);
-            member.setName("soeun2");
+            member.setId(100L);
+            member.setName("HelloJPA");
 
-            /* persist(): 데이터베이스에 데이터를 저장 */
-            em.persist(member);
+            //영속
+            System.out.println("=== BEFORE ===");
+            em.persist(member); //쿼리문이 Before 과 After 사이에 출력 되지 않고 나중에 출력됨 -> 커밋 시점에 쿼리를 날림
+            //em.detach(member);  //detach(): 영속성 컨테이너에서 엔티티를 지움
+            System.out.println("=== AFTER ===");
 
-            /* find([테이블 타입], [PK]): 데이터베이스에서 PK로 데이터 조회 */
-            Member findMember = em.find(Member.class, 1L);
+            //1차 캐시 있는 엔티티 조회
+            Member findMember = em.find(Member.class, 100L);    //위에서 엔티티를 만들 때 1차 캐시에 저장함 -> 1차 캐시에서 가져오므로 조회 쿼리를 날리지 않음
 
-            /* createQuery(): 직접 쿼리를 통해 데이터를 CRUD */
-            // JPQL: 쿼리를 짤 때도 객체 관점으로 짬 (select "m")
-            // setFirstResult([idx]): 몇번째 row 부터 가져올 지에 대한 인덱스
-            // setMaxResults([idx]): 최대 가져올 row 개수
-            List<Member> result = em.createQuery("select m from Member as m", Member.class)
-                    .setFirstResult(5)
-                    .setMaxResults(8)
-                    .getResultList();
+            System.out.println("findMember.getId() = " + findMember.getId());
+            System.out.println("findMember.getName() = " + findMember.getName());
 
-            for (Member m : result) {System.out.println("member.getName() = " + m.getName());}
+            //1차 캐시에 없는 엔티티 2번 조회
+            Member findMember1 = em.find(Member.class, 1L);    //1차 캐시에 없는 1L에 대해 첫번째 조회를 할 때는 DB 에서 가져옴 (조회 쿼리를 날림)
+            Member findMember2 = em.find(Member.class, 1L);    //두번째 조회부터는 1차 캐시에서 가져옴 (조회 쿼리를 날리지 않음)
 
-            /* 데이터의 수정!!!: 수정은 별다른 jpa 메서드를 사용하지 않아도 값이 변경되면 "자동으로" DB 값도 변경해준다. */
-            findMember.setName("soeunKim");
+            //영속성 엔티티 동일성 보장
+            System.out.println(findMember1 == findMember2); //true
 
-            /* remove(): 데이터베이스에서 데이터 삭제 */
-            //em.remove(findMember);
+            //트랜잭션을 지원하는 쓰기 지연
+            Member member1 = new Member(150L, "A");
+            Member member2 = new Member(160L, "B");
 
-            transaction1.commit();   //commit(): 트랜잭션 종료
+            em.persist(member1);
+            em.persist(member2);
+            System.out.println("=======================");  //이 출력 이후에 member1, member2에 대한 생성 쿼리를 날림
+
+            member1.setName("C");   //1차 캐시에 있는 엔티티가 수정되면, 커밋 시, 스냅샷과 비교하여 자동으로 DB에 업데이트 쿼리를 날림
+
+            //플러시
+            Member member3 = new Member(200L, "member200");
+            em.persist(member3);
+
+            em.flush(); //플러시 매커니즘이 즉시 일어남
+            System.out.println("======== FLUSH ========");  //이 출력 이전에 생성, 업데이트 쿼리를 날림
+
+            transaction1.commit();  //커밋하는 이 시점에, 영속성 컨텍스트에 저장된 엔티티를 DB에 저장함 (쿼리를 돌림)
         } catch (Exception e) {
-            transaction1.rollback(); //rollback(): 트랜잭션 취소
+            transaction1.rollback();
         } finally {
             em.close();
         }
