@@ -1,0 +1,31 @@
+실전 예제 1 - 요구사항 분석과 기본 매핑
+
+도메인 모델 분석
+회원과 주문의 관계: 회원은 여러 번 주문할 수 있다. (일대다)
+주문과 상품의 관계: 주문을 할 때 여러 상품을 선택할 수 있다. 반대로 같은 상품도 여러 번 주문될 수 있다. (다대다)
+* 다대다와 같은 경우는 새로운 모델을 만들어서 일대다, 다대일 관계로 풀어내야 함
+
+회원 (1)-(*) 주문 (1)-(*) 주문상품 (*)-(1) 상품
+
+테이블 설계
+MEMBER
+MEMBER_ID(PK), NAME, CITY, STREET, ZIPCODE
+ORDERS  //ORDER BY 예약어 때문에 'ORDER' 키워드가 불가능한 DBMS가 있음
+ORDER_ID(PK), MEMBER_ID(FK), ORDERDATE, STATUS
+ODER_ITEM
+ORDER_ITEM_ID(PK), ORDER_ID(FK), ITEM_ID(FK), ORDERFRICE, COUNT
+ITEM
+ITEM_ID(PK), NAME,  PRICE, STOCKQUANTITY
+
+엔티티 설계와 매핑
+Member
+id(Long), name(String), city(String), street(String), zipcode(String)
+Order
+id(Long), memberId(Long), orderDate(Date), status(OrderStatus)
+OrderItem
+id(Long), orderId(Long), itemId(Long), orderPrice(int), count(int)
+Item
+id(Long), name(String), price(int), stockQuantity(int)
+
+* 이것에 대한 문제점
+현재 방식은 객체 설계를 테이블 설계에 맞춘 방식이다. 테이블의 외래키를 객체에 그대로 가져오고 있다. 그래서 객체 그래프 탐색이 불가능하고 참조가 없으므로 사실 UML도 잘못되었다.
