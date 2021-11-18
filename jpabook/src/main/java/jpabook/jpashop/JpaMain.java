@@ -1,7 +1,9 @@
 package jpabook.jpashop;
 
+import com.sun.org.apache.xpath.internal.operations.Or;
 import jpabook.jpashop.domain.Member;
 import jpabook.jpashop.domain.Order;
+import jpabook.jpashop.domain.OrderItem;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
@@ -19,11 +21,14 @@ public class JpaMain {
         tx.begin();
 
         try {
-            Order order = em.find(Order.class, 1L);
-            Long memberId = order.getMemberId();
-            Member member = em.find(Member.class, memberId);    //Order 에서 memberId를 찾아 다시 Member 에서 조회한다는 거 자체가 매우 비효율적임 (객체지향적이지 않음->관계형 DB에 맞춰서 설계한 꼴)
+            //order <-> orderItem 양방향 연관관계로 만들지 않아도 이렇게 코드로 작성할 수 있다~~ (개발의 편의를 위해 만든 것뿐)
+            Order order = new Order();
+            em.persist(order);
 
-            //Member findMember = order.getMember();  //이게 객체지향적. Order 에서 Member 객체로 바로 접근
+            OrderItem orderItem = new OrderItem();
+            orderItem.setOrder(order);
+
+            em.persist(orderItem);
 
             tx.commit();
         } catch (Exception e) {
