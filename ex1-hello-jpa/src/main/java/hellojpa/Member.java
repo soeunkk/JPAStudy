@@ -7,35 +7,50 @@ import java.util.Date;
 
 @Entity
 public class Member {
-    @Id //PK로 지정
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private String id;
+    @Id @GeneratedValue
+    @Column(name="MEMBER_ID")
+    private Long id;
 
-    @Column(name = "name")  //객체는 username 이라고 사용하지만 DB 에는 컬럼명 name 으로 저장
+    @Column(name = "USERNAME")
     private String username;
 
-//    private Integer age;    //DB에 Integer 와 가장 적절한 숫자 타입으로 저장됨
-//
-//    @Enumerated(EnumType.STRING)    //자바에서 enum 타입으로 사용하는 필드를 DB에 저장
-//    private RoleType roleType;
-//
-//    @Temporal(TemporalType.TIMESTAMP)   //TemporalType 에는 3가지가 있음 (TIMESTAMP:날짜+시간, DATE:날짜, TIME:시간)
-//    private Date createdDate;
-//
-//    @Temporal(TemporalType.TIMESTAMP)
-//    private Date lastModifiedDate;
-//
-//    @Lob    //varchar 를 넘어서는 큰 컨텐츠 저장 (String 의 경우 CLOB 으로 저장됨)
-//    private String description;
-//
-//    @Transient  //스프링 내부에서만 사용하는 필드 (필드에 아무런 어노테이션을 사용하지 않으면 DB에 있는 컬럼과 매핑되어야 함)
-//    private int temp;
+//    @Column(name="TEAM_ID")
+//    private Long teamId;
 
-    public Member() {   //JPA 에서는 내부에서 동적으로 객체를 생성하기 때문에 기본 생성자가 필요함
+    //한 멤버는 하나의 팀만 선택할 수 있다고 가정
+    //멤버 입장에서는 자신이 N이고 팀이 1인 관계임 (ManyToOne)
+    @ManyToOne
+    //JPA 에서는 객체지향으로 설계하나, DB 에서 사용할 수 있도록 FK를 알려주어야 함 (DB 에서는 TEAM_ID를 FK로 지정하듯이)
+    @JoinColumn(name="TEAM_ID")
+    private Team team;
 
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getUsername() {
+        return username;
     }
 
     public void setUsername(String username) {
         this.username = username;
+    }
+
+    public Team getTeam() {
+        return team;
+    }
+
+    public void setTeam(Team team) {
+        this.team = team;
+    }
+
+    //값을 바꾸는 기능뿐만 아니라, 역방향 필드값도 바꿔주기 때문에 setTeam()이라는 이름은 적절하지 않음
+    public void changeTeam(Team team) {
+        this.team = team;
+        this.getTeam().getMembers().add(this);  //연관관계 주인쪽에서 외래키 필드 값을 변경 -> 역방향 객체의 외래키 필드 값도 여기서 관리
     }
 }
