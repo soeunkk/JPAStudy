@@ -13,7 +13,7 @@ MEMBER_ID(PK), NAME, CITY, STREET, ZIPCODE
 ORDERS  //ORDER BY 예약어 때문에 'ORDER' 키워드가 불가능한 DBMS가 있음
 ORDER_ID(PK), MEMBER_ID(FK), ORDERDATE, STATUS
 ODER_ITEM
-ORDER_ITEM_ID(PK), ORDER_ID(FK), ITEM_ID(FK), ORDERFRICE, COUNT
+ORDER_ITEM_ID(PK), ORDER_ID(FK), ITEM_ID(FK), ORDERPRICE, COUNT
 ITEM
 ITEM_ID(PK), NAME,  PRICE, STOCKQUANTITY
 
@@ -46,3 +46,23 @@ Order <1-N> OrderItem   ?왜 일대다 관계이지? 다대다 관계를 풀기 
 OrderItem <N-1> Item
 외래키를 OrderItem 쪽에서 가지고 있기 때문에 OrderItem 객체에 있는 item을 연관관계의 주인으로 단방향 매핑
 
+
+실전 예제 3 - 다양한 연관관계 매핑
+
+MISSION) 배송, 카테고리 엔티티 추가
+주문-배송 연관관계 매핑 (1:1)
+Order <1-1> Delivery
+
+제품-카테고리 연관관계 매핑 (N:M)
+Item <1-N> CategoryItem <1-N> Category
+** 오랜만에 보면 관계 헷갈림..
+   자. 한 Item 당 여러 개의 CategoryItem만 가질 수 있지? 그러면 상대방 쪽에 적어. Item <?-N> CategoryItem
+   한 CategoryItem 당 한 개의 Item만 가질 수 있지? 또 상대방 쪽에 적어. Item <1-?> CategoryItem
+   이걸 합쳐. Item <1-N> CategoryItem
+   이제 읽는 방법은 자기쪽을 먼저 읽는거야. Item은 "일대다", CategoryItem은 "다대일"
+   다대일이 연관관계의 주인이니까 CategoryItem이 주인이겠지? 그럼 반대편인 Item에 mappedBy로 뭐랑 매핑되었는지 기술해.
+
+   자 그러면 여기서 문제. Category에서도 상위 카테고리가 있고 하위 카테고리가 있지. Parent<1-N>Child 관계에서 어느 변수에 무슨 어노테이션을 써야 할까?
+   정답: parent에 @ManyToOne을, child에 @OneToMany를 써야 한다.
+   이전에 내가 헷갈렸던 점은 Child는 다대일이니까 @ManyToOne을 써야하는거 아닌가?였다. 중요한 점은 Child라는 "엔티티"가 다대일이므로 Child의 parent "변수"에 @ManyToOne을 써주어야 한다는 것!
+   Member<1-N>Order로 예시를 들면 쉬움. Order의 member에 @ManyToOne을 사용하고 Member의 orders에 @OneToMany(mapped="")를 사용하듯이.
