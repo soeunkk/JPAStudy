@@ -3,7 +3,9 @@ package hellojpa;
 import jdk.nashorn.internal.objects.annotations.Setter;
 
 import javax.persistence.*;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 @Entity
 public class Member {
@@ -14,15 +16,31 @@ public class Member {
     @Column(name = "USERNAME")
     private String username;
 
-//    @Column(name="TEAM_ID")
-//    private Long teamId;
-
-    //한 멤버는 하나의 팀만 선택할 수 있다고 가정
-    //멤버 입장에서는 자신이 N이고 팀이 1인 관계임 (ManyToOne)
+    /*
+    //다대일 연관관계 단방향
     @ManyToOne
-    //JPA 에서는 객체지향으로 설계하나, DB 에서 사용할 수 있도록 FK를 알려주어야 함 (DB 에서는 TEAM_ID를 FK로 지정하듯이)
     @JoinColumn(name="TEAM_ID")
     private Team team;
+     */
+
+    //일대다 연관관계 양방향
+    @ManyToOne
+    @JoinColumn(insertable = false, updatable = false)  //@JoinColumn을 했기 때문에 연관관계의 주인이 됨 -> DB가 변형되는 것을 막고자 추가, 업데이트 하는 것을 막음 (결과적으로 읽기 전용으로 만듦)
+    private Team team;
+
+    //일대일 연관관계 단방향
+    @OneToOne
+    @JoinColumn(name = "LOCKER_ID")
+    private Locker locker;
+
+    //다대다 연관관계 단방향
+    /*
+    @ManyToMany
+    @JoinTable(name="MEMBER_PRODUCT")
+    private List<Product> products = new ArrayList<>();
+     */
+    @OneToMany(mappedBy = "member")
+    private List<MemberProduct> memberProducts = new ArrayList<>();
 
     public Long getId() {
         return id;
@@ -38,19 +56,5 @@ public class Member {
 
     public void setUsername(String username) {
         this.username = username;
-    }
-
-    public Team getTeam() {
-        return team;
-    }
-
-    public void setTeam(Team team) {
-        this.team = team;
-    }
-
-    //값을 바꾸는 기능뿐만 아니라, 역방향 필드값도 바꿔주기 때문에 setTeam()이라는 이름은 적절하지 않음
-    public void changeTeam(Team team) {
-        this.team = team;
-        this.getTeam().getMembers().add(this);  //연관관계 주인쪽에서 외래키 필드 값을 변경 -> 역방향 객체의 외래키 필드 값도 여기서 관리
     }
 }
