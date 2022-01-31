@@ -89,7 +89,7 @@ public class Order {
      */
     public int getTotalPrice() {
         return orderItems.stream()
-                .mapToInt(orderItem -> orderItem.getItem().getPrice())
+                .mapToInt(orderItem -> orderItem.getTotalPrice())
                 .sum();
     }
 }
